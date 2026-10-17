@@ -152,12 +152,15 @@ impl CliHandler {
                 lock.clone().unwrap_or_else(|| "Chưa đăng nhập".to_string())
             };
 
+            let agy_info = SystemDetector::detect_antigravity();
+
             println!("\n{}", "╔══════════════════════════════════════════════════════════════════════╗".cyan());
             println!("║             {} v{}           ║", "EXPIRY APP - BỘ CÔNG CỤ KIỂM THỬ THÂN THIỆN".bold().green(), env!("CARGO_PKG_VERSION"));
             println!("{}", "╚══════════════════════════════════════════════════════════════════════╝".cyan());
             println!("  🌍 Máy chủ  : {} ({})", host.hostname.bold(), host.tailscale_ip.as_deref().unwrap_or("Tailscale offline").green());
             println!("  🔗 Tunnel   : {}", base_url.bold().blue());
             println!("  👤 Tài khoản: {}", user_email.bold().yellow());
+            println!("  🤖 AGY AI   : {}", agy_info.surface.bold().magenta());
             println!("{}", "──────────────────────────────────────────────────────────────────────".cyan());
             println!("  {} Chạy toàn bộ 10 bài test tự động (1-Click Full Test)", "[1]".bold().green());
             println!("  {} Đăng nhập tài khoản test (Lấy Cookie & CSRF)", "[2]".bold().green());
@@ -167,9 +170,10 @@ impl CliHandler {
             println!("  {} Mở Swagger API Docs trên trình duyệt", "[6]".bold().magenta());
             println!("  {} Mở Terminal TUI nâng cao (Ratatui Hotkeys)", "[7]".bold().yellow());
             println!("  {} Kiểm tra cập nhật phiên bản từ GitHub", "[8]".bold().blue());
+            println!("  {} Kích hoạt Antigravity Pipeline (Model Cao ➔ Model Thấp)", "[9]".bold().cyan());
             println!("  {} Thoát chương trình", "[0]".bold().red());
             println!("{}", "──────────────────────────────────────────────────────────────────────".cyan());
-            print!("👉 Nhập lựa chọn của bạn [0-8]: ");
+            print!("👉 Nhập lựa chọn của bạn [0-9]: ");
             let _ = io::stdout().flush();
 
             let mut input = String::new();
@@ -328,6 +332,16 @@ impl CliHandler {
                         println!("  {} Bạn đang sử dụng phiên bản mới nhất (v{}).", "✓".green(), update_info.current_version);
                     }
                 }
+                "9" => {
+                    println!("\n--- [9] KÍCH HOẠT ANTIGRAVITY DUAL-MODEL PIPELINE ---");
+                    print!("  Nhập yêu cầu phân tích [Mặc định: Phân tích Barcode & Date Disambiguation]: ");
+                    let _ = io::stdout().flush();
+                    let mut task = String::new();
+                    let _ = io::stdin().read_line(&mut task);
+                    let task = task.trim();
+                    let prompt = if task.is_empty() { None } else { Some(task) };
+                    Self::trigger_antigravity_pipeline(base_url, prompt).await;
+                }
                 "0" => {
                     println!("\n  👋 Cảm ơn bạn đã sử dụng Expiry Control Suite. Tạm biệt!");
                     #[cfg(target_os = "windows")]
@@ -339,7 +353,7 @@ impl CliHandler {
                     break;
                 }
                 _ => {
-                    println!("  ⚠️ Lựa chọn không hợp lệ. Vui lòng nhập số từ 0 đến 8.");
+                    println!("  ⚠️ Lựa chọn không hợp lệ. Vui lòng nhập số từ 0 đến 9.");
                 }
             }
 
@@ -348,5 +362,89 @@ impl CliHandler {
             let _ = io::stdout().flush();
             let _ = io::stdin().read_line(&mut String::new());
         }
+    }
+
+    pub async fn trigger_antigravity_pipeline(target_url: &str, task_prompt: Option<&str>) {
+        let agy_info = SystemDetector::detect_antigravity();
+
+        println!("\n{}", "═════════════════════════════════════════════════════════════════".cyan());
+        println!("  {} v{}", "🤖 ANTIGRAVITY DUAL-MODEL ORCHESTRATION PIPELINE".bold().green(), env!("CARGO_PKG_VERSION"));
+        println!("{}", "═════════════════════════════════════════════════════════════════".cyan());
+        println!("  {} {}", "ACTIVE SURFACE:".bold(), agy_info.surface.bold().yellow());
+        if let Some(ref bin) = agy_info.agy_binary {
+            println!("  {} {}", "CLI BINARY:".bold(), bin.green());
+        }
+        if let Some(ref conv) = agy_info.conversation_id {
+            println!("  {} {}", "CONVERSATION ID:".bold(), conv.cyan());
+        }
+        println!("  {} {}", "HIGHEST MODEL (Architect):".bold(), agy_info.highest_model.bold().magenta());
+        println!("  {} {}", "LOWEST MODEL (Builder)   :".bold(), agy_info.lowest_model.bold().blue());
+        println!("{}", "─────────────────────────────────────────────────────────────────".cyan());
+
+        // Step 1: Automatically open the browser
+        println!("  🌐 [Bước 1/3] Tự động mở trình duyệt web: {}", target_url.cyan());
+        Self::open_browser(target_url);
+
+        let prompt = task_prompt.unwrap_or(
+            "Analyze Expiry system contracts, live barcode integration in apps/web, and date disambiguation logic. Provide a 3-step execution plan."
+        );
+
+        if let Some(ref bin) = agy_info.agy_binary {
+            // Phase 1: High-Tier Reasoning (Architect Mode)
+            println!("\n  🧠 [Bước 2/3] Gọi Model Cao Nhất ({}) để Phân Tích & Lập Plan...", agy_info.highest_model.bold().magenta());
+            println!("  ⏳ Đang chạy 'agy --model {} --print'...", agy_info.highest_model);
+
+            let phase1_output = std::process::Command::new(bin)
+                .args(["--model", &agy_info.highest_model, "--print", prompt])
+                .output();
+
+            match phase1_output {
+                Ok(out) => {
+                    let result_text = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                    if !result_text.is_empty() {
+                        println!("  ✅ [Phase 1 Xong] Kết quả phân tích từ Architect Model:");
+                        for line in result_text.lines().take(12) {
+                            println!("     │ {}", line.dimmed());
+                        }
+                        if result_text.lines().count() > 12 {
+                            println!("     │ ... (đã trích xuất {} dòng)", result_text.lines().count());
+                        }
+                    } else {
+                        let err_text = String::from_utf8_lossy(&out.stderr);
+                        println!("  ⚠️ Phase 1 output trống / stderr: {}", err_text.yellow());
+                    }
+                }
+                Err(e) => {
+                    println!("  ⚠️ Không thể gọi Phase 1: {}", e);
+                }
+            }
+
+            // Phase 2: Fast Implementation (Builder Mode)
+            println!("\n  ⚡ [Bước 3/3] Chuyển giao xuống Model Nhẹ Nhất ({}) để Implement...", agy_info.lowest_model.bold().blue());
+            println!("  ⏳ Đang chạy 'agy --model {} --print'...", agy_info.lowest_model);
+
+            let builder_prompt = format!(
+                "You are the fast builder agent. Confirm execution of the plan using minimal tokens and verify test readiness. Task: {}", prompt
+            );
+
+            let phase2_output = std::process::Command::new(bin)
+                .args(["--model", &agy_info.lowest_model, "--print", &builder_prompt])
+                .output();
+
+            match phase2_output {
+                Ok(out) => {
+                    let result_text = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                    println!("  ✅ [Phase 2 Xong] Xác nhận từ Builder Model:\n     {}", result_text.green());
+                }
+                Err(e) => {
+                    println!("  ⚠️ Không thể gọi Phase 2: {}", e);
+                }
+            }
+        } else {
+            println!("  ℹ️ Không tìm thấy agy CLI binary trên máy client này.");
+            println!("  👉 Bạn có thể cài đặt Antigravity CLI tại: https://antigravity.google/docs/cli");
+        }
+
+        println!("\n🎉 Hoàn thành chu trình Antigravity Dual-Model!");
     }
 }

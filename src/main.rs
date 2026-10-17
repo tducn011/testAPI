@@ -9,7 +9,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(name = "expiry-ctl")]
 #[command(author = "Expiry DevOps Team")]
-#[command(version = "1.0.1")]
+#[command(version = "1.0.2")]
 #[command(about = "Native Multiplatform Server Identity, Docker Inspector & API Workbench", long_about = None)]
 struct Cli {
     #[arg(short, long, default_value = "https://bathrooms-boost-breaking-atlas.trycloudflare.com")]
@@ -31,6 +31,11 @@ enum Commands {
     Update,
     /// Launch the guided friendly wizard menu (default)
     Wizard,
+    /// Trigger Antigravity Dual-Model Pipeline (High Architect -> Low Builder)
+    Agy {
+        #[arg(short, long)]
+        task: Option<String>,
+    },
 }
 
 #[tokio::main]
@@ -53,6 +58,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(Commands::Tui) => {
             let mut app = ui::TuiApp::new().await;
             app.run().await?;
+        }
+        Some(Commands::Agy { task }) => {
+            cli::CliHandler::trigger_antigravity_pipeline(&cli.target, task.as_deref()).await;
         }
         Some(Commands::Wizard) | None => {
             cli::CliHandler::run_wizard(&cli.target).await;

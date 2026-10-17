@@ -168,4 +168,62 @@ impl SystemDetector {
             latency_ms,
         }
     }
+
+    pub fn detect_antigravity() -> AntigravityInfo {
+        let is_agent = std::env::var("ANTIGRAVITY_AGENT").as_deref() == Ok("1");
+        let conversation_id = std::env::var("ANTIGRAVITY_CONVERSATION_ID").ok();
+        let ls_version = std::env::var("ANTIGRAVITY_LS_VERSION").ok();
+        let surface_var = std::env::var("ANTIGRAVITY_SURFACE").ok();
+        let term_prog = std::env::var("TERM_PROGRAM").ok();
+        let vscode_pid = std::env::var("VSCODE_PID").ok();
+
+        // Locate agy binary
+        let agy_binary = if let Ok(path) = std::env::var("ANTIGRAVITY_AGENTAPI_EXE") {
+            Some(path)
+        } else if let Ok(o) = Command::new("which").arg("agy").output() {
+            let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
+            if !s.is_empty() { Some(s) } else { None }
+        } else if std::path::Path::new("/home/tducn/.local/bin/agy").exists() {
+            Some("/home/tducn/.local/bin/agy".to_string())
+        } else {
+            None
+        };
+
+        let surface = if is_agent || conversation_id.is_some() {
+            if surface_var.as_deref() == Some("ide") || term_prog.as_deref() == Some("vscode") || vscode_pid.is_some() {
+                "Antigravity IDE (VS Code Pair Programmer)".to_string()
+            } else if surface_var.as_deref() == Some("app") {
+                "Antigravity 2.0 (Desktop Electron Platform)".to_string()
+            } else {
+                format!("Antigravity CLI (agy {})", ls_version.as_deref().unwrap_or("active"))
+            }
+        } else if agy_binary.is_some() {
+            "Antigravity CLI (Installed on Host)".to_string()
+        } else {
+            "Standalone Client (No Antigravity Runtime Detected)".to_string()
+        };
+
+        let is_detected = is_agent || conversation_id.is_some() || agy_binary.is_some();
+
+        AntigravityInfo {
+            is_detected,
+            surface,
+            agy_binary,
+            conversation_id,
+            ls_version,
+            highest_model: "claude-opus-4-6-thinking".to_string(),
+            lowest_model: "gemini-3.8-flash-low".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AntigravityInfo {
+    pub is_detected: bool,
+    pub surface: String,
+    pub agy_binary: Option<String>,
+    pub conversation_id: Option<String>,
+    pub ls_version: Option<String>,
+    pub highest_model: String,
+    pub lowest_model: String,
 }
