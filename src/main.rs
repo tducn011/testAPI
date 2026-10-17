@@ -2,6 +2,7 @@ mod api_client;
 mod cli;
 mod detector;
 mod ui;
+mod updater;
 
 use clap::{Parser, Subcommand};
 
@@ -22,10 +23,12 @@ struct Cli {
 enum Commands {
     /// Launch the interactive Postman-like Terminal TUI
     Tui,
-    /// Inspect server identity, Tailscale IP, Docker containers, and Cloudflare tunnel
+    /// Inspect server identity, Tailscale IP, Docker containers, Cloudflare tunnel, and check updates
     Status,
-    /// Run the automated 13-stage API behavioral & contract test suite
+    /// Run the automated 10-stage API behavioral & contract test suite
     Test,
+    /// Check GitHub releases and update expiry-ctl to the latest version
+    Update,
 }
 
 #[tokio::main]
@@ -38,6 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(Commands::Test) => {
             cli::CliHandler::run_test_suite(&cli.target).await;
+        }
+        Some(Commands::Update) => {
+            let client = reqwest::Client::new();
+            if let Err(e) = updater::Updater::perform_update(&client).await {
+                eprintln!("Update failed: {e}");
+            }
         }
         Some(Commands::Tui) | None => {
             let mut app = ui::TuiApp::new().await;

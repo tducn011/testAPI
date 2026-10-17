@@ -1,13 +1,14 @@
 use colored::Colorize;
 use crate::api_client::{PostmanEngine, ENDPOINTS};
 use crate::detector::SystemDetector;
+use crate::updater::Updater;
 
 pub struct CliHandler;
 
 impl CliHandler {
     pub async fn print_status(target_url: &str) {
         println!("{}", "═════════════════════════════════════════════════════════════════".cyan());
-        println!("           {} v1.0.0", "EXPIRY SYSTEM CONTROL CENTER".bold().green());
+        println!("           {} v{}", "EXPIRY SYSTEM CONTROL CENTER".bold().green(), env!("CARGO_PKG_VERSION"));
         println!("{}", "═════════════════════════════════════════════════════════════════".cyan());
 
         let host = SystemDetector::detect_host();
@@ -57,6 +58,16 @@ impl CliHandler {
                 println!("  {} /health probe failed: {}", "PING:".bold().red(), e);
             }
         }
+
+        println!("\n{}", "── VERSION & GITHUB RELEASE CHECK ──────────────────────────────".cyan());
+        let update_info = Updater::check_latest(&client).await;
+        if update_info.has_update {
+            println!("  {} New version {} available! (Current: v{})", "🔔 UPDATE:".bold().yellow(), update_info.latest_version.bold().green(), update_info.current_version);
+            println!("  👉 Run '{}' to automatically upgrade this executable.", "expiry-ctl update".bold().cyan());
+        } else {
+            println!("  {} You are running the latest version (v{}).", "✓".green(), update_info.current_version);
+        }
+
         println!("{}", "═════════════════════════════════════════════════════════════════\n".cyan());
     }
 
@@ -75,7 +86,6 @@ impl CliHandler {
                     if (resp.status >= 200 && resp.status < 300) || (ep.path == "/health" && resp.status == 200) {
                         println!("{} (HTTP {} - {}ms)", "PASS".green().bold(), resp.status, resp.duration_ms);
                     } else if ep.requires_auth && resp.status == 401 && idx == 1 {
-                        // Expected 401 for security gate
                         println!("{} (HTTP 401 Gate Confirmed)", "PASS".green().bold());
                     } else {
                         println!("{} (HTTP {} - {})", "CHECK".yellow().bold(), resp.status, resp.status_text);

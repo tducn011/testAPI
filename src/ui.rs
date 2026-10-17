@@ -21,6 +21,7 @@ pub struct TuiApp {
     pub host: HostInfo,
     pub containers: Vec<ContainerStatus>,
     pub tunnel: TunnelInfo,
+    pub update_info: crate::updater::UpdateInfo,
     pub engine: PostmanEngine,
     pub selected_endpoint: usize,
     pub targets: Vec<String>,
@@ -35,6 +36,7 @@ impl TuiApp {
         let host = SystemDetector::detect_host();
         let containers = SystemDetector::detect_docker();
         let tunnel = SystemDetector::detect_tunnel(&client).await;
+        let update_info = crate::updater::Updater::check_latest(&client).await;
 
         let targets = vec![
             tunnel.url.clone(),
@@ -46,6 +48,7 @@ impl TuiApp {
             host,
             containers,
             tunnel,
+            update_info,
             engine: PostmanEngine::new(),
             selected_endpoint: 0,
             targets,
@@ -130,10 +133,16 @@ impl TuiApp {
         let ts_ip = self.host.tailscale_ip.as_deref().unwrap_or("No Tailscale");
         let env_label = if self.host.is_homeserver { "HOMESERVER (100.80.6.17)" } else { "CLIENT LAPTOP" };
         let tunnel_status = if self.tunnel.active { "ACTIVE" } else { "OFFLINE" };
+        let update_badge = if self.update_info.has_update {
+            Span::styled(format!(" [🔔 UPDATE v{} AVAILABLE]", self.update_info.latest_version), Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+        } else {
+            Span::styled(format!(" [v{}]", env!("CARGO_PKG_VERSION")), Style::default().fg(Color::DarkGray))
+        };
 
         let header_lines = vec![
             Line::from(vec![
                 Span::styled("⚡ EXPIRY CONTROL CENTER", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                update_badge,
                 Span::raw(" | Host: "),
                 Span::styled(&self.host.hostname, Style::default().fg(Color::Yellow)),
                 Span::raw(" | Env: "),
