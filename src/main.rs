@@ -9,7 +9,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(name = "expiry-ctl")]
 #[command(author = "Expiry DevOps Team")]
-#[command(version = "1.0.0")]
+#[command(version = "1.0.1")]
 #[command(about = "Native Multiplatform Server Identity, Docker Inspector & API Workbench", long_about = None)]
 struct Cli {
     #[arg(short, long, default_value = "https://bathrooms-boost-breaking-atlas.trycloudflare.com")]
@@ -21,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Launch the interactive Postman-like Terminal TUI
+    /// Launch the interactive Postman-like Terminal TUI (for power users)
     Tui,
     /// Inspect server identity, Tailscale IP, Docker containers, Cloudflare tunnel, and check updates
     Status,
@@ -29,6 +29,8 @@ enum Commands {
     Test,
     /// Check GitHub releases and update expiry-ctl to the latest version
     Update,
+    /// Launch the guided friendly wizard menu (default)
+    Wizard,
 }
 
 #[tokio::main]
@@ -48,9 +50,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 eprintln!("Update failed: {e}");
             }
         }
-        Some(Commands::Tui) | None => {
+        Some(Commands::Tui) => {
             let mut app = ui::TuiApp::new().await;
             app.run().await?;
+        }
+        Some(Commands::Wizard) | None => {
+            cli::CliHandler::run_wizard(&cli.target).await;
         }
     }
 

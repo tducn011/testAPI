@@ -17,6 +17,7 @@ use ratatui::{
 use crate::api_client::{ApiResponse, PostmanEngine, ENDPOINTS};
 use crate::detector::{ContainerStatus, HostInfo, SystemDetector, TunnelInfo};
 
+#[allow(dead_code)]
 pub struct TuiApp {
     pub host: HostInfo,
     pub containers: Vec<ContainerStatus>,

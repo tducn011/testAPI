@@ -31,7 +31,7 @@ pub const ENDPOINTS: &[ApiEndpoint] = &[
         name: "2. Auth: Register",
         method: "POST",
         path: "/api/v1/auth/register",
-        sample_body: Some(r#"{"email":"team_user@expiry.test","password":"Password123!","display_name":"Team Member","timezone":"Asia/Ho_Chi_Minh"}"#),
+        sample_body: Some(r#"{"email":"team_user@expiry.test","password":"ExpiryTeamTester2026!","display_name":"Team Member","timezone":"Asia/Ho_Chi_Minh"}"#),
         requires_auth: false,
         requires_csrf: false,
         requires_idempotency: false,
@@ -40,7 +40,7 @@ pub const ENDPOINTS: &[ApiEndpoint] = &[
         name: "3. Auth: Login",
         method: "POST",
         path: "/api/v1/auth/login",
-        sample_body: Some(r#"{"email":"team_user@expiry.test","password":"Password123!"}"#),
+        sample_body: Some(r#"{"email":"team_user@expiry.test","password":"ExpiryTeamTester2026!"}"#),
         requires_auth: false,
         requires_csrf: false,
         requires_idempotency: false,
@@ -212,8 +212,10 @@ impl PostmanEngine {
             // Capture session cookie from Set-Cookie
             if k.as_str().eq_ignore_ascii_case("set-cookie") {
                 if v_str.contains("expiry_session=") || v_str.contains("__Host-expiry_session=") {
-                    let mut lock = self.cookie_session.lock().await;
-                    *lock = Some(v_str.clone());
+                    if let Some(cookie_pair) = v_str.split(';').next() {
+                        let mut lock = self.cookie_session.lock().await;
+                        *lock = Some(cookie_pair.trim().to_string());
+                    }
                 }
             }
         }
