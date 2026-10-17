@@ -77,16 +77,33 @@ impl CliHandler {
 
         let engine = PostmanEngine::new();
 
+        let ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let test_email = format!("tester_{ts}@expiry.test");
+        let reg_body = format!(
+            r#"{{"email":"{test_email}","password":"ExpiryTeamTester2026!","display_name":"Auto Tester","timezone":"Asia/Ho_Chi_Minh"}}"#
+        );
+        let login_body = format!(
+            r#"{{"email":"{test_email}","password":"ExpiryTeamTester2026!"}}"#
+        );
+
         for (idx, ep) in ENDPOINTS.iter().enumerate() {
             let label = format!("[STAGE {}: {}]", idx + 1, ep.name);
             print!("  Running {:<40} ... ", label);
 
-            match engine.send_request(base_url, ep, None, None).await {
+            let custom_body = if idx == 1 {
+                Some(reg_body.as_str())
+            } else if idx == 2 {
+                Some(login_body.as_str())
+            } else {
+                None
+            };
+
+            match engine.send_request(base_url, ep, custom_body, None).await {
                 Ok(resp) => {
                     if (resp.status >= 200 && resp.status < 300) || (ep.path == "/health" && resp.status == 200) {
                         println!("{} (HTTP {} - {}ms)", "PASS".green().bold(), resp.status, resp.duration_ms);
-                    } else if ep.requires_auth && resp.status == 401 && idx == 1 {
-                        println!("{} (HTTP 401 Gate Confirmed)", "PASS".green().bold());
+                    } else if ep.path.contains("/auth/register") && resp.status == 409 {
+                        println!("{} (HTTP 409 - User Exists / Ready)", "PASS".green().bold());
                     } else {
                         println!("{} (HTTP {} - {})", "CHECK".yellow().bold(), resp.status, resp.status_text);
                     }
