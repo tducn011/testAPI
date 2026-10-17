@@ -20,13 +20,13 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-gnu, x86_64-pc-windows-gnu
+          targets: x86_64-unknown-linux-musl, x86_64-pc-windows-gnu
 
-      - name: Install MinGW Cross-Compiler
-        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
+      - name: Install Cross-Compilers
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64 musl-tools
 
-      - name: Build Linux Binary
-        run: cargo build --release --target x86_64-unknown-linux-gnu
+      - name: Build Static Linux Binary (musl)
+        run: cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Build Windows Executable
         run: cargo build --release --target x86_64-pc-windows-gnu
@@ -34,13 +34,15 @@ jobs:
       - name: Package Artifacts
         run: |
           mkdir -p artifacts
-          cp target/x86_64-unknown-linux-gnu/release/expiry-ctl artifacts/expiry-ctl-linux
+          cp target/x86_64-unknown-linux-musl/release/expiry-ctl artifacts/expiry-ctl
+          cp target/x86_64-unknown-linux-musl/release/expiry-ctl artifacts/expiry-ctl-linux
           cp target/x86_64-pc-windows-gnu/release/expiry-ctl.exe artifacts/expiry-ctl.exe
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            artifacts/expiry-ctl
             artifacts/expiry-ctl-linux
             artifacts/expiry-ctl.exe
           name: Release ${{ github.ref_name }}
